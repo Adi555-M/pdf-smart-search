@@ -53,7 +53,7 @@ export function SearchResults({ results, searchTerm, onResultClick }: SearchResu
                 Page {result.pageNumber}
               </span>
               <span className="text-xs text-muted-foreground">
-                Line {result.lineNumber}
+                Line ~{result.lineNumber}
               </span>
             </div>
           </div>
