@@ -117,6 +117,33 @@ const Index = () => {
           </div>
         )}
       </main>
+
+      {/* Footer */}
+      <footer className="border-t border-border bg-card/50 mt-auto">
+        <div className="container max-w-7xl mx-auto px-4 py-6">
+          <div className="flex flex-col items-center gap-3">
+            {/* Black Mind Logo */}
+            <div className="flex items-center gap-2">
+              <div className="w-8 h-8 rounded-lg bg-foreground flex items-center justify-center">
+                <div className="w-5 h-5 relative">
+                  <div className="absolute inset-0 rounded-full border-2 border-background" />
+                  <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-2 h-2 rounded-full bg-background" />
+                </div>
+              </div>
+              <span className="font-bold text-foreground tracking-tight">Black Mind</span>
+            </div>
+            
+            <p className="text-sm text-muted-foreground">
+              Made by <span className="font-semibold text-foreground">Mr.Marb</span>
+            </p>
+            
+            {/* Note about line numbers */}
+            <p className="text-xs text-muted-foreground/70 text-center max-w-md">
+              Note: Line numbers shown are estimates based on text extraction and may not match exact PDF formatting.
+            </p>
+          </div>
+        </div>
+      </footer>
     </div>
   );
 };
