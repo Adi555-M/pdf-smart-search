@@ -13,9 +13,10 @@ interface PDFViewerProps {
   currentPage: number;
   onPageChange: (page: number) => void;
   totalPages: number;
+  searchTerm?: string;
 }
 
-export function PDFViewer({ file, currentPage, onPageChange, totalPages }: PDFViewerProps) {
+export function PDFViewer({ file, currentPage, onPageChange, totalPages, searchTerm }: PDFViewerProps) {
   const [scale, setScale] = useState(1.0);
   const [fileUrl, setFileUrl] = useState<string | null>(null);
 
@@ -24,6 +25,41 @@ export function PDFViewer({ file, currentPage, onPageChange, totalPages }: PDFVi
     setFileUrl(url);
     return () => URL.revokeObjectURL(url);
   }, [file]);
+
+  // Highlight search term in PDF text layer
+  useEffect(() => {
+    if (!searchTerm?.trim()) {
+      // Remove existing highlights
+      document.querySelectorAll('.pdf-highlight').forEach(el => {
+        const parent = el.parentNode;
+        if (parent) {
+          parent.replaceChild(document.createTextNode(el.textContent || ''), el);
+          parent.normalize();
+        }
+      });
+      return;
+    }
+
+    const highlightText = () => {
+      const textLayer = document.querySelector('.react-pdf__Page__textContent');
+      if (!textLayer) return;
+
+      const spans = textLayer.querySelectorAll('span');
+      const regex = new RegExp(`(${searchTerm.replace(/[.*+?^${}()|[\]\\]/g, '\\$&')})`, 'gi');
+
+      spans.forEach((span) => {
+        const text = span.textContent || '';
+        if (regex.test(text)) {
+          const highlighted = text.replace(regex, '<mark class="pdf-highlight">$1</mark>');
+          span.innerHTML = highlighted;
+        }
+      });
+    };
+
+    // Small delay to ensure text layer is rendered
+    const timer = setTimeout(highlightText, 300);
+    return () => clearTimeout(timer);
+  }, [searchTerm, currentPage]);
 
   const goToPreviousPage = () => {
     if (currentPage > 1) {
