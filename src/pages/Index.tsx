@@ -112,7 +112,6 @@ const Index = () => {
                 currentPage={currentPage}
                 onPageChange={setCurrentPage}
                 totalPages={document.totalPages}
-                searchTerm={searchTerm}
               />
             </div>
           </div>

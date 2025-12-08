@@ -175,15 +175,6 @@
   @apply rounded-lg shadow-sm max-w-full h-auto !important;
 }
 
-/* PDF text layer highlight */
-.pdf-highlight {
-  background-color: hsl(45 100% 50% / 0.6) !important;
-  color: hsl(0 0% 0%) !important;
-  padding: 2px 1px;
-  border-radius: 2px;
-  box-shadow: 0 0 0 2px hsl(45 100% 50% / 0.3);
-}
-
 /* Animation keyframes */
 @keyframes fade-in-up {
   from {

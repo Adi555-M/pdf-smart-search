@@ -52,8 +52,8 @@ export function SearchResults({ results, searchTerm, onResultClick }: SearchResu
               <span className="inline-flex items-center justify-center h-6 px-2.5 rounded-md bg-primary/10 text-primary text-xs font-semibold">
                 Page {result.pageNumber}
               </span>
-              <span className="text-xs text-muted-foreground" title="Line number is approximate">
-                ~Line {result.lineNumber}
+              <span className="text-xs text-muted-foreground">
+                Line {result.lineNumber}
               </span>
             </div>
           </div>
