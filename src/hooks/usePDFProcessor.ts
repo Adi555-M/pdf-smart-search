@@ -15,23 +15,40 @@ export function usePDFProcessor() {
   const extractTextFromPage = async (
     pdfDoc: any,
     pageNum: number
-  ): Promise<string> => {
+  ): Promise<{ text: string; lines: string[] }> => {
     const page = await pdfDoc.getPage(pageNum);
     const textContent = await page.getTextContent();
-    const text = textContent.items
-      .map((item: any) => item.str)
-      .join(" ");
+    
+    // Group text items by their vertical position (y coordinate) to detect actual lines
+    const lineMap = new Map<number, string[]>();
+    const tolerance = 5; // Tolerance for grouping items on the same line
+    
+    textContent.items.forEach((item: any) => {
+      if (!item.str.trim()) return;
+      
+      const y = Math.round(item.transform[5] / tolerance) * tolerance;
+      if (!lineMap.has(y)) {
+        lineMap.set(y, []);
+      }
+      lineMap.get(y)!.push(item.str);
+    });
+    
+    // Sort by Y position (descending - PDF coordinates start from bottom)
+    const sortedYPositions = Array.from(lineMap.keys()).sort((a, b) => b - a);
+    const lines = sortedYPositions.map(y => lineMap.get(y)!.join(' ').trim()).filter(line => line);
+    
+    const text = lines.join('\n');
     
     // If text is empty or very short, it might be a scanned PDF - use OCR
     if (text.trim().length < 50) {
       return await extractTextWithOCR(page);
     }
     
-    return text;
+    return { text, lines };
   };
 
-  const extractTextWithOCR = async (page: any): Promise<string> => {
-    const scale = 2.0; // Higher scale for better OCR accuracy
+  const extractTextWithOCR = async (page: any): Promise<{ text: string; lines: string[] }> => {
+    const scale = 2.0;
     const viewport = page.getViewport({ scale });
     
     const canvas = window.document.createElement("canvas");
@@ -47,10 +64,14 @@ export function usePDFProcessor() {
     const imageData = canvas.toDataURL("image/png");
     
     const result = await Tesseract.recognize(imageData, "eng", {
-      logger: () => {}, // Suppress logs
+      logger: () => {},
     });
 
-    return result.data.text;
+    const text = result.data.text;
+    // Split OCR text by actual newlines
+    const lines = text.split('\n').map(line => line.trim()).filter(line => line);
+    
+    return { text, lines };
   };
 
   const processFile = useCallback(async (file: File) => {
@@ -66,8 +87,7 @@ export function usePDFProcessor() {
       toast.info(`Processing ${totalPages} pages...`);
 
       for (let i = 1; i <= totalPages; i++) {
-        const text = await extractTextFromPage(pdfDoc, i);
-        const lines = text.split(/\n|(?<=\.)\s+|(?<=\?)\s+|(?<=!)\s+/).filter(line => line.trim());
+        const { text, lines } = await extractTextFromPage(pdfDoc, i);
         
         pages.push({
           pageNumber: i,
