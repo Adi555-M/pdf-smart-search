@@ -3,11 +3,12 @@ import { Upload, FileText, Loader2 } from "lucide-react";
 import { cn } from "@/lib/utils";
 
 interface PDFUploaderProps {
-  onFileSelect: (file: File) => void;
+  onFilesSelect: (files: File[]) => void;
   isProcessing: boolean;
+  currentFile?: string;
 }
 
-export function PDFUploader({ onFileSelect, isProcessing }: PDFUploaderProps) {
+export function PDFUploader({ onFilesSelect, isProcessing, currentFile }: PDFUploaderProps) {
   const [isDragging, setIsDragging] = useState(false);
 
   const handleDragOver = useCallback((e: React.DragEvent) => {
@@ -24,22 +25,26 @@ export function PDFUploader({ onFileSelect, isProcessing }: PDFUploaderProps) {
     (e: React.DragEvent) => {
       e.preventDefault();
       setIsDragging(false);
-      const file = e.dataTransfer.files[0];
-      if (file && file.type === "application/pdf") {
-        onFileSelect(file);
+      const files = Array.from(e.dataTransfer.files).filter(
+        file => file.type === "application/pdf"
+      );
+      if (files.length > 0) {
+        onFilesSelect(files);
       }
     },
-    [onFileSelect]
+    [onFilesSelect]
   );
 
   const handleFileInput = useCallback(
     (e: React.ChangeEvent<HTMLInputElement>) => {
-      const file = e.target.files?.[0];
-      if (file) {
-        onFileSelect(file);
+      const files = Array.from(e.target.files || []);
+      if (files.length > 0) {
+        onFilesSelect(files);
       }
+      // Reset input so same files can be selected again
+      e.target.value = '';
     },
-    [onFileSelect]
+    [onFilesSelect]
   );
 
   return (
@@ -58,6 +63,7 @@ export function PDFUploader({ onFileSelect, isProcessing }: PDFUploaderProps) {
       <input
         type="file"
         accept="application/pdf"
+        multiple
         onChange={handleFileInput}
         className="absolute inset-0 w-full h-full opacity-0 cursor-pointer"
         disabled={isProcessing}
@@ -73,7 +79,9 @@ export function PDFUploader({ onFileSelect, isProcessing }: PDFUploaderProps) {
             </div>
             <div className="text-center">
               <p className="text-lg font-medium text-foreground">Processing PDF...</p>
-              <p className="text-sm text-muted-foreground mt-1">Extracting text with OCR</p>
+              {currentFile && (
+                <p className="text-sm text-muted-foreground mt-1 max-w-xs truncate">{currentFile}</p>
+              )}
             </div>
           </>
         ) : (
@@ -92,10 +100,10 @@ export function PDFUploader({ onFileSelect, isProcessing }: PDFUploaderProps) {
             </div>
             <div className="text-center">
               <p className="text-lg font-medium text-foreground">
-                {isDragging ? "Drop your PDF here" : "Upload a PDF document"}
+                {isDragging ? "Drop your PDFs here" : "Upload PDF documents"}
               </p>
               <p className="text-sm text-muted-foreground mt-1">
-                Drag and drop or click to browse • Supports scanned PDFs
+                Drag and drop or click to browse • Select multiple files
               </p>
             </div>
           </>

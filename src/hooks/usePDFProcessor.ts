@@ -10,7 +10,8 @@ GlobalWorkerOptions.workerSrc = `//unpkg.com/pdfjs-dist@4.4.168/build/pdf.worker
 export function usePDFProcessor() {
   const [isProcessing, setIsProcessing] = useState(false);
   const [progress, setProgress] = useState(0);
-  const [document, setDocument] = useState<PDFDocument | null>(null);
+  const [documents, setDocuments] = useState<PDFDocument[]>([]);
+  const [currentProcessingFile, setCurrentProcessingFile] = useState<string>("");
 
   const extractTextFromPage = async (
     pdfDoc: any,
@@ -20,22 +21,29 @@ export function usePDFProcessor() {
     const textContent = await page.getTextContent();
     
     // Group text items by their vertical position (y coordinate) to detect actual lines
-    const lineMap = new Map<number, string[]>();
-    const tolerance = 5; // Tolerance for grouping items on the same line
+    const lineMap = new Map<number, { x: number; text: string }[]>();
+    const tolerance = 3; // Tighter tolerance for better line accuracy
     
     textContent.items.forEach((item: any) => {
       if (!item.str.trim()) return;
       
       const y = Math.round(item.transform[5] / tolerance) * tolerance;
+      const x = item.transform[4];
+      
       if (!lineMap.has(y)) {
         lineMap.set(y, []);
       }
-      lineMap.get(y)!.push(item.str);
+      lineMap.get(y)!.push({ x, text: item.str });
     });
     
     // Sort by Y position (descending - PDF coordinates start from bottom)
     const sortedYPositions = Array.from(lineMap.keys()).sort((a, b) => b - a);
-    const lines = sortedYPositions.map(y => lineMap.get(y)!.join(' ').trim()).filter(line => line);
+    
+    // For each line, sort by X position (left to right) and join
+    const lines = sortedYPositions.map(y => {
+      const lineItems = lineMap.get(y)!.sort((a, b) => a.x - b.x);
+      return lineItems.map(item => item.text).join(' ').trim();
+    }).filter(line => line);
     
     const text = lines.join('\n');
     
@@ -48,7 +56,7 @@ export function usePDFProcessor() {
   };
 
   const extractTextWithOCR = async (page: any): Promise<{ text: string; lines: string[] }> => {
-    const scale = 2.0;
+    const scale = 2.5; // Higher scale for better OCR accuracy
     const viewport = page.getViewport({ scale });
     
     const canvas = window.document.createElement("canvas");
@@ -74,84 +82,113 @@ export function usePDFProcessor() {
     return { text, lines };
   };
 
-  const processFile = useCallback(async (file: File) => {
+  const processFiles = useCallback(async (files: File[]) => {
     setIsProcessing(true);
     setProgress(0);
     
+    const newDocuments: PDFDocument[] = [];
+    const totalFiles = files.length;
+    
     try {
-      const arrayBuffer = await file.arrayBuffer();
-      const pdfDoc = await getDocument({ data: arrayBuffer }).promise;
-      const totalPages = pdfDoc.numPages;
-      const pages: PageContent[] = [];
-
-      toast.info(`Processing ${totalPages} pages...`);
-
-      for (let i = 1; i <= totalPages; i++) {
-        const { text, lines } = await extractTextFromPage(pdfDoc, i);
+      for (let fileIndex = 0; fileIndex < files.length; fileIndex++) {
+        const file = files[fileIndex];
+        setCurrentProcessingFile(file.name);
         
-        pages.push({
-          pageNumber: i,
-          text,
-          lines,
-        });
+        const arrayBuffer = await file.arrayBuffer();
+        const pdfDoc = await getDocument({ data: arrayBuffer }).promise;
+        const totalPages = pdfDoc.numPages;
+        const pages: PageContent[] = [];
 
-        setProgress(Math.round((i / totalPages) * 100));
+        for (let i = 1; i <= totalPages; i++) {
+          const { text, lines } = await extractTextFromPage(pdfDoc, i);
+          
+          pages.push({
+            pageNumber: i,
+            text,
+            lines,
+          });
+
+          // Progress calculation: (completed files + current page progress) / total files
+          const fileProgress = (fileIndex / totalFiles) * 100;
+          const pageProgress = ((i / totalPages) * 100) / totalFiles;
+          setProgress(Math.round(fileProgress + pageProgress));
+        }
+
+        const doc: PDFDocument = {
+          id: `${file.name}-${Date.now()}-${fileIndex}`,
+          file,
+          name: file.name,
+          pages,
+          totalPages,
+        };
+
+        newDocuments.push(doc);
       }
 
-      const doc: PDFDocument = {
-        file,
-        name: file.name,
-        pages,
-        totalPages,
-      };
-
-      setDocument(doc);
-      toast.success(`Successfully processed ${totalPages} pages!`);
+      setDocuments(prev => [...prev, ...newDocuments]);
+      toast.success(`Successfully processed ${files.length} file(s)!`);
     } catch (error) {
       console.error("Error processing PDF:", error);
       toast.error("Failed to process PDF. Please try again.");
     } finally {
       setIsProcessing(false);
       setProgress(0);
+      setCurrentProcessingFile("");
     }
   }, []);
 
-  const searchDocument = useCallback(
+  const searchDocuments = useCallback(
     (searchTerm: string): SearchResult[] => {
-      if (!document || !searchTerm.trim()) return [];
+      if (documents.length === 0 || !searchTerm.trim()) return [];
 
       const results: SearchResult[] = [];
       const term = searchTerm.toLowerCase();
 
-      document.pages.forEach((page) => {
-        page.lines.forEach((line, lineIndex) => {
-          if (line.toLowerCase().includes(term)) {
-            const matchIndex = line.toLowerCase().indexOf(term);
-            results.push({
-              pageNumber: page.pageNumber,
-              lineNumber: lineIndex + 1,
-              lineText: line,
-              matchIndex,
-            });
-          }
+      documents.forEach((doc) => {
+        doc.pages.forEach((page) => {
+          page.lines.forEach((line, lineIndex) => {
+            if (line.toLowerCase().includes(term)) {
+              const matchIndex = line.toLowerCase().indexOf(term);
+              results.push({
+                documentId: doc.id,
+                documentName: doc.name,
+                pageNumber: page.pageNumber,
+                lineNumber: lineIndex + 1,
+                lineText: line,
+                matchIndex,
+                selected: false,
+              });
+            }
+          });
         });
       });
 
       return results;
     },
-    [document]
+    [documents]
   );
 
-  const clearDocument = useCallback(() => {
-    setDocument(null);
+  const getDocumentById = useCallback((id: string) => {
+    return documents.find(doc => doc.id === id);
+  }, [documents]);
+
+  const removeDocument = useCallback((id: string) => {
+    setDocuments(prev => prev.filter(doc => doc.id !== id));
+  }, []);
+
+  const clearAllDocuments = useCallback(() => {
+    setDocuments([]);
   }, []);
 
   return {
     isProcessing,
     progress,
-    document,
-    processFile,
-    searchDocument,
-    clearDocument,
+    currentProcessingFile,
+    documents,
+    processFiles,
+    searchDocuments,
+    getDocumentById,
+    removeDocument,
+    clearAllDocuments,
   };
 }
