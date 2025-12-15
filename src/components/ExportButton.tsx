@@ -77,15 +77,16 @@ export function ExportButton({ selectedResults, results, documents }: ExportButt
     <Button
       onClick={handleExport}
       disabled={selectedResults.size === 0 || isExporting}
-      className="gap-2"
+      size="sm"
+      className="h-8 gap-1.5 text-xs"
       variant={selectedResults.size > 0 ? "default" : "outline"}
     >
       {isExporting ? (
-        <Loader2 className="w-4 h-4 animate-spin" />
+        <Loader2 className="w-3.5 h-3.5 animate-spin" />
       ) : (
-        <Download className="w-4 h-4" />
+        <Download className="w-3.5 h-3.5" />
       )}
-      Export Selected ({selectedResults.size})
+      Export {selectedResults.size > 0 && `(${selectedResults.size})`}
     </Button>
   );
 }
