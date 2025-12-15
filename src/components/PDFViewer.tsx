@@ -44,43 +44,43 @@ export function PDFViewer({ file, currentPage, onPageChange, totalPages }: PDFVi
 
   return (
     <div className="flex flex-col h-full">
-      {/* Toolbar */}
-      <div className="flex items-center justify-between p-3 border-b border-border bg-card/50 backdrop-blur-sm rounded-t-xl">
-        <div className="flex items-center gap-2">
+      {/* Compact Toolbar */}
+      <div className="flex items-center justify-between px-3 py-2 border-b border-border bg-card/80 backdrop-blur-sm">
+        <div className="flex items-center gap-1">
           <Button
             variant="ghost"
             size="icon"
             onClick={goToPreviousPage}
             disabled={currentPage <= 1}
-            className="h-9 w-9 rounded-lg"
+            className="h-7 w-7"
           >
-            <ChevronLeft className="w-5 h-5" />
+            <ChevronLeft className="w-4 h-4" />
           </Button>
-          <span className="text-sm font-medium text-foreground min-w-[100px] text-center">
-            Page {currentPage} of {totalPages}
+          <span className="text-xs font-medium text-foreground min-w-[70px] text-center tabular-nums">
+            {currentPage} / {totalPages}
           </span>
           <Button
             variant="ghost"
             size="icon"
             onClick={goToNextPage}
             disabled={currentPage >= totalPages}
-            className="h-9 w-9 rounded-lg"
+            className="h-7 w-7"
           >
-            <ChevronRight className="w-5 h-5" />
+            <ChevronRight className="w-4 h-4" />
           </Button>
         </div>
         
-        <div className="flex items-center gap-2">
+        <div className="flex items-center gap-1">
           <Button
             variant="ghost"
             size="icon"
             onClick={zoomOut}
             disabled={scale <= 0.5}
-            className="h-9 w-9 rounded-lg"
+            className="h-7 w-7"
           >
-            <ZoomOut className="w-5 h-5" />
+            <ZoomOut className="w-4 h-4" />
           </Button>
-          <span className="text-sm font-medium text-muted-foreground min-w-[60px] text-center">
+          <span className="text-xs text-muted-foreground min-w-[40px] text-center tabular-nums">
             {Math.round(scale * 100)}%
           </span>
           <Button
@@ -88,32 +88,32 @@ export function PDFViewer({ file, currentPage, onPageChange, totalPages }: PDFVi
             size="icon"
             onClick={zoomIn}
             disabled={scale >= 3}
-            className="h-9 w-9 rounded-lg"
+            className="h-7 w-7"
           >
-            <ZoomIn className="w-5 h-5" />
+            <ZoomIn className="w-4 h-4" />
           </Button>
         </div>
       </div>
 
       {/* PDF Content */}
-      <div className="flex-1 overflow-auto p-6 bg-muted/30 scrollbar-thin flex justify-center">
+      <div className="flex-1 overflow-auto p-4 bg-muted/20 flex justify-center">
         <Document
           file={fileUrl}
           loading={
             <div className="flex items-center justify-center h-64">
-              <div className="text-muted-foreground">Loading PDF...</div>
+              <div className="text-sm text-muted-foreground">Loading PDF...</div>
             </div>
           }
           error={
             <div className="flex items-center justify-center h-64">
-              <div className="text-destructive">Failed to load PDF</div>
+              <div className="text-sm text-destructive">Failed to load PDF</div>
             </div>
           }
         >
           <Page
             pageNumber={currentPage}
             scale={scale}
-            className="shadow-paper-lg rounded-lg overflow-hidden"
+            className="shadow-lg rounded-sm overflow-hidden"
             renderTextLayer={true}
             renderAnnotationLayer={true}
           />
