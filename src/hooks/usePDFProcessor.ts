@@ -20,34 +20,64 @@ export function usePDFProcessor() {
     const page = await pdfDoc.getPage(pageNum);
     const textContent = await page.getTextContent();
     
-    // Group text items by their vertical position (y coordinate) to detect actual lines
-    const lineMap = new Map<number, { x: number; text: string }[]>();
-    const tolerance = 3; // Tighter tolerance for better line accuracy
+    if (textContent.items.length === 0) {
+      return await extractTextWithOCR(page);
+    }
+    
+    // Extract all text items with their positions
+    const textItems: { y: number; x: number; text: string; height: number }[] = [];
     
     textContent.items.forEach((item: any) => {
-      if (!item.str.trim()) return;
-      
-      const y = Math.round(item.transform[5] / tolerance) * tolerance;
-      const x = item.transform[4];
-      
-      if (!lineMap.has(y)) {
-        lineMap.set(y, []);
-      }
-      lineMap.get(y)!.push({ x, text: item.str });
+      if (!item.str || !item.str.trim()) return;
+      textItems.push({
+        y: item.transform[5],
+        x: item.transform[4],
+        text: item.str,
+        height: item.height || 12, // Default font height
+      });
     });
     
-    // Sort by Y position (descending - PDF coordinates start from bottom)
-    const sortedYPositions = Array.from(lineMap.keys()).sort((a, b) => b - a);
+    if (textItems.length === 0) {
+      return await extractTextWithOCR(page);
+    }
     
-    // For each line, sort by X position (left to right) and join
-    const lines = sortedYPositions.map(y => {
-      const lineItems = lineMap.get(y)!.sort((a, b) => a.x - b.x);
-      return lineItems.map(item => item.text).join(' ').trim();
-    }).filter(line => line);
+    // Calculate average font height to determine line tolerance
+    const avgHeight = textItems.reduce((sum, item) => sum + item.height, 0) / textItems.length;
+    const lineTolerance = Math.max(avgHeight * 0.6, 2); // Use 60% of font height as tolerance
+    
+    // Sort items by Y position (descending - top to bottom)
+    textItems.sort((a, b) => b.y - a.y);
+    
+    // Group items into lines based on Y proximity
+    const lineGroups: { y: number; items: typeof textItems }[] = [];
+    
+    textItems.forEach(item => {
+      // Find existing line group within tolerance
+      const existingGroup = lineGroups.find(group => 
+        Math.abs(group.y - item.y) <= lineTolerance
+      );
+      
+      if (existingGroup) {
+        existingGroup.items.push(item);
+        // Update group Y to weighted average for better grouping
+        existingGroup.y = (existingGroup.y + item.y) / 2;
+      } else {
+        lineGroups.push({ y: item.y, items: [item] });
+      }
+    });
+    
+    // Sort line groups by Y position (top to bottom)
+    lineGroups.sort((a, b) => b.y - a.y);
+    
+    // Build lines by sorting each group's items by X position (left to right)
+    const lines = lineGroups.map(group => {
+      const sortedItems = group.items.sort((a, b) => a.x - b.x);
+      return sortedItems.map(item => item.text).join(' ').trim();
+    }).filter(line => line.length > 0);
     
     const text = lines.join('\n');
     
-    // If text is empty or very short, it might be a scanned PDF - use OCR
+    // If text is too short, might be scanned - use OCR
     if (text.trim().length < 50) {
       return await extractTextWithOCR(page);
     }

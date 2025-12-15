@@ -246,7 +246,7 @@ const Index = () => {
       <footer className="flex-shrink-0 border-t border-border bg-card/50 px-4 py-1.5">
         <div className="flex items-center justify-between text-xs text-muted-foreground">
           <span>Made by <span className="font-medium text-foreground">Mr.Marb</span></span>
-          <span className="opacity-70">Line numbers are estimates</span>
+          <span className="opacity-70">Line numbers based on PDF text structure</span>
         </div>
       </footer>
     </div>

@@ -131,8 +131,8 @@ export function SearchResults({
                       <span className="inline-flex items-center px-1.5 py-0.5 rounded text-[10px] font-medium bg-primary/10 text-primary">
                         P{result.pageNumber}
                       </span>
-                      <span className="text-[10px] text-muted-foreground">
-                        ~L{result.lineNumber}
+                      <span className="inline-flex items-center px-1.5 py-0.5 rounded text-[10px] font-medium bg-muted text-muted-foreground">
+                        L{result.lineNumber}
                       </span>
                       <span className="text-[10px] text-muted-foreground/70 truncate max-w-[100px]" title={result.documentName}>
                         {result.documentName}
