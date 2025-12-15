@@ -155,7 +155,7 @@ const Index = () => {
 
               <div className="text-center pt-2">
                 <p className="text-xs text-muted-foreground/70">
-                  📁 All rights to the content uploaded in this file/PDF are solely owned by me.
+                  📁 You should have all rights on uploaded file.
                 </p>
               </div>
             </div>
