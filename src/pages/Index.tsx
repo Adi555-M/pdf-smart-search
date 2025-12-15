@@ -122,8 +122,11 @@ const Index = () => {
             <div className="max-w-xl w-full space-y-6 animate-fade-in">
               <div className="text-center">
                 <h2 className="text-2xl font-bold text-foreground mb-2">
-                  Search Any PDF Document
+                  Find Pages from Long Files Easily
                 </h2>
+                <p className="text-lg text-primary/80 font-medium mb-1">
+                  Search & Export with One Click
+                </p>
                 <p className="text-muted-foreground">
                   Upload PDFs including scanned documents. Text will be extracted using OCR.
                 </p>
@@ -148,6 +151,12 @@ const Index = () => {
                     <p className="text-xs text-muted-foreground mt-0.5">{feature.desc}</p>
                   </div>
                 ))}
+              </div>
+
+              <div className="text-center pt-2">
+                <p className="text-xs text-muted-foreground/70">
+                  📁 All uploaded files are processed locally. You retain full rights to your documents.
+                </p>
               </div>
             </div>
           </div>
