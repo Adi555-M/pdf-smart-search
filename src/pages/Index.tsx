@@ -88,6 +88,12 @@ const Index = () => {
             </div>
             <h1 className="text-lg font-semibold text-foreground">PDF Search</h1>
           </div>
+          <div className="flex items-center gap-2">
+              <Button variant="outline" size="sm" className="h-8 gap-1" onClick={() => navigate("/page-export")}>
+                <Scissors className="w-3.5 h-3.5" />
+                Page Picker
+              </Button>
+          </div>
           {documents.length > 0 && (
             <div className="flex items-center gap-2">
               <label className="cursor-pointer">
