@@ -1,5 +1,6 @@
 import { useState, useMemo, useCallback } from "react";
-import { FileSearch2, Plus, GripVertical } from "lucide-react";
+import { FileSearch2, Plus, GripVertical, Scissors } from "lucide-react";
+import { useNavigate } from "react-router-dom";
 import { PDFUploader } from "@/components/PDFUploader";
 import { SearchBar } from "@/components/SearchBar";
 import { SearchResults } from "@/components/SearchResults";
@@ -16,6 +17,7 @@ import {
 } from "@/components/ui/resizable";
 
 const Index = () => {
+  const navigate = useNavigate();
   const [searchTerm, setSearchTerm] = useState("");
   const [currentPage, setCurrentPage] = useState(1);
   const [activeDocumentId, setActiveDocumentId] = useState<string | null>(null);
